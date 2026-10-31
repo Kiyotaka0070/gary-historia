@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gary V10 - 3 Cartas + Fondo Translúcido</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#05020a;color:#ffeaff;font-family:"Plus Jakarta Sans",sans-serif;overflow:hidden}
+#visor{width:100vw;height:100vh;position:relative;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;transform:translateX(110%);opacity:0;transition:transform 0.68s cubic-bezier(0.77,0,0.175,1), opacity 0.45s ease;z-index:1}
+.slide.activo{transform:translateX(0);opacity:1;z-index:3}
+.slide.salida-izq{transform:translateX(-110%);opacity:0;z-index:2}
+.slide.salida-der{transform:translateX(110%);opacity:0;z-index:2}
+.slide img{width:100%;max-width:100vw;max-height:52vh;object-fit:contain;background:#000}
+.info{width:100%;max-width:700px;padding:16px 22px;text-align:center;background:linear-gradient(180deg,rgba(0,0,0,0.92),#12082a);transform:translateY(24px);opacity:0;transition:transform 0.55s 0.28s, opacity 0.55s 0.28s}
+.slide.activo .info{transform:translateY(0);opacity:1}
+.hora{font-size:11px;letter-spacing:3.5px;color:#ffb4e5}
+.titulo{font:600 1.6rem Cormorant Garamond,serif;margin:6px 0 8px}
+.texto{font-size:13.8px;line-height:1.7;white-space:pre-line;min-height:72px}
+.barra{position:absolute;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#ff238d,#a044ff,#3ab6ff)}
+#selectorFinales{position:fixed;inset:0;z-index:50;display:none;background:radial-gradient(100% 100% at 50% 0%, #2a0a5a 0%, #10051e 70%, #05020a 100%);padding:20px;overflow-y:auto;align-items:center;justify-content:center;flex-direction:column}
+#selectorFinales.visible{display:flex}
+.finales-grid{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:760px}
+.card-final{width:210px;padding:22px 18px;border-radius:24px;border:1px solid rgba(255,255,255,0.2);background:linear-gradient(145deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));backdrop-filter:blur(14px);cursor:pointer;text-align:center}
+#visorFinal{position:fixed;inset:0;z-index:60;display:none;background:#000;flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;padding:20px}
+#visorFinal.visible{display:flex}
+#cartaFinal{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);}
+#cartaFinal.visible{display:flex;animation:aparecer .5s}
+#cartaFinal.fondo-toque{background:radial-gradient(120% 120% at 50% 20%, rgba(255,120,150,0.28) 0%, rgba(42,10,60,0.55) 45%, rgba(5,2,10,0.85) 100%)}
+#cartaFinal.fondo-ventana{background:radial-gradient(120% 120% at 50% 20%, rgba(120,160,255,0.28) 0%, rgba(15,20,60,0.6) 45%, rgba(5,2,10,0.85) 100%)}
+#cartaFinal.fondo-huellitas{background:radial-gradient(120% 120% at 50% 20%, rgba(255,200,120,0.26) 0%, rgba(45,30,10,0.55) 45%, rgba(5,2,10,0.85) 100%)}
+.carta-papel{width:min(580px,92vw);padding:34px 30px;border-radius:28px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.5), 0 0 120px rgba(255,180,229,0.22);border:1px solid rgba(255,255,255,0.22);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);}
+.carta-papel.toque{background:linear-gradient(165deg, rgba(255,253,245,0.88) 0%, rgba(255,228,218,0.82) 100%);color:#3a2418}
+.carta-papel.ventana{background:linear-gradient(165deg, rgba(240,245,255,0.88) 0%, rgba(218,228,255,0.82) 100%);color:#1e2340}
+.carta-papel.huellitas{background:linear-gradient(165deg, rgba(255,250,235,0.88) 0%, rgba(255,233,180,0.82) 100%);color:#3a2a12}
+.carta-papel::after{content:"";position:absolute;inset:0;border-radius:28px;background:radial-gradient(80% 60% at 20% 20%, rgba(255,255,255,0.5) 0%, transparent 60%);pointer-events:none}
+.carta-header{font-size:11px;letter-spacing:3.5px;opacity:.55;margin-bottom:16px;display:flex;justify-content:space-between}
+.carta-texto{font:400 1.08rem/1.9 Cormorant Garamond,serif;white-space:pre-line;text-align:left}
+.carta-firma{margin-top:22px;font:600 1.15rem Cormorant Garamond,serif;text-align:right}
+.carta-papel.toque .carta-firma{color:#d12a6a}
+.carta-papel.ventana .carta-firma{color:#3a5bd1}
+.carta-papel.huellitas .carta-firma{color:#b87a18}
+.controles{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none;z-index:20;padding:0 12px}
+.btn{pointer-events:auto;width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,0.28);background:rgba(0,0,0,0.5);color:white;font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#progreso{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:15}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.35);cursor:pointer}.dot.activo{background:white;width:24px;border-radius:10px}
+#inicio{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px;transition:opacity .9s;overflow:hidden;background:#05020a}
+#inicio.oculta{opacity:0;pointer-events:none}
+.foto-fondo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(18px) brightness(0.45);transform:scale(1.1)}
+.foto-fondo-overlay{position:absolute;inset:0;background:radial-gradient(85% 70% at 50% 28%, rgba(255,180,229,0.18) 0%, rgba(42,10,90,0.55) 45%, rgba(5,2,10,0.96) 85%)}
+.foto-viva-wrap{width:min(68vw, 340px);aspect-ratio:3/4;border-radius:32px;overflow:hidden;border:2px solid rgba(255,255,255,0.35);box-shadow:0 0 90px rgba(255,79,188,0.38);animation:flotar 3.5s ease-in-out infinite}
+.foto-viva{width:100%;height:100%;object-fit:cover;animation:fotoRespira 5s ease-in-out infinite}
+@keyframes fotoRespira{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes flotar{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.btn-entrar{margin-top:22px;padding:16px 42px;border-radius:999px;background:linear-gradient(100deg,#ff238d,#a044ff 55%,#3ab6ff);color:white;letter-spacing:3px;cursor:pointer}
+@keyframes aparecer{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}
+</style>
+</head>
+<body>
+<audio id="musica" loop></audio>
+<div id="inicio"><img class="foto-fondo" src="portada.jpg"><div class="foto-fondo-overlay"></div><div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center"><div class="foto-viva-wrap"><img class="foto-viva" src="portada.jpg"></div><h1 style="font:600 2.4rem Cormorant Garamond,serif;margin:12px 0 4px">El Viaje de Luz de <span style="color:#ffe0f3">Gary</span></h1><button class="btn-entrar" id="btnEntrar">ENTRAR ✨</button></div></div>
+<div id="visor"></div>
+<div id="progreso"></div>
+<div class="controles"><button class="btn" id="prev">‹</button><button class="btn" id="next">›</button></div>
+<div id="selectorFinales"><div style="font:600 2rem Cormorant Garamond,serif;margin-bottom:8px">El viaje casi termina...</div><div class="finales-grid"><div class="card-final" data-final="toque">🐾<h3>FINAL A - El Toque</h3><p style="font-size:10px;opacity:.6">River Flows In You</p></div><div class="card-final" data-final="ventana">🌙<h3>FINAL B - La Ventana</h3><p style="font-size:10px;opacity:.6">Comptine</p></div><div class="card-final" data-final="huellitas">✨<h3>FINAL C - Huellitas</h3><p style="font-size:10px;opacity:.6">Cornfield Chase</p></div></div><button id="volver9" style="margin-top:22px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:white;padding:10px 20px;border-radius:999px">← Volver</button></div>
+<div id="visorFinal"><img id="imgFinal" style="max-width:100vw;max-height:52vh"><div style="width:100%;max-width:700px;padding:16px 22px;text-align:center;background:linear-gradient(180deg,rgba(0,0,0,0.92),#12082a)"><div id="horaFinal" class="hora"></div><div id="tituloFinal" class="titulo"></div><div id="textoFinal" class="texto"></div><div style="margin-top:14px;display:flex;gap:8px;justify-content:center"><button id="btnCarta" style="padding:10px 20px;border-radius:999px;background:linear-gradient(100deg,#ff238d,#a044ff);color:white;border:none;cursor:pointer">💌 Leer carta de Gabi</button><button style="padding:10px 20px;border-radius:999px;background:transparent;border:1px solid rgba(255,255,255,0.25);color:white;cursor:pointer" onclick="mostrarSelector()">Ver otros finales ↺</button></div></div><div id="barraFinal" class="barra" style="width:0%"></div></div>
+<div id="cartaFinal"><div id="papel" class="carta-papel toque"><div class="carta-header"><span id="cartaLabel">CARTA PARA GARY — DE GABI</span><span id="cartaIcon">🐾</span></div><div id="cartaTexto" class="carta-texto"></div><div id="cartaFirma" class="carta-firma"></div><div style="margin-top:26px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button style="padding:12px 24px;border-radius:999px;border:none;background:linear-gradient(100deg,#ff238d,#a044ff);color:white;cursor:pointer" onclick="volverAlViaje()">← Volver al viaje</button><button style="padding:12px 24px;border-radius:999px;border:1px solid rgba(0,0,0,0.15);background:rgba(255,255,255,0.4);color:#2b1d12;cursor:pointer" onclick="mostrarSelector()">Ver otros finales</button></div></div></div>
+<script>
+const MUSICAS={viaje:{src:"musica/lluvia.mp3"},toque:{src:"musica/toque.mp3"},ventana:{src:"musica/ventana.mp3"},huellitas:{src:"musica/huellitas.mp3"}};
+const FINALES={
+toque:{file:"gary-final-toque.jpg",hora:"12:00 FINAL A",titulo:"El Toque",texto:"Gary pone su patita blanca en tu mano.\nNo es adios. Es: estoy aqui.\n\n- Gary 🐾",musica:"toque"},
+ventana:{file:"gary-final-ventana.jpg",hora:"12:00 FINAL B",titulo:"La Ventana",texto:"Desde la ventana, Gary mira la luna.\nNo se fue lejos. Solo se mudo donde puede verte siempre.\n\n- Gary 🌙",musica:"ventana"},
+huellitas:{file:"gary-final-huellitas.jpg",hora:"12:00 FINAL C",titulo:"Huellitas de Luz",texto:"En la oscuridad, quedan huellitas brillando.\nCada huella es un recuerdo tuyo con el.\n\n- Gary ✨🐾",musica:"huellitas"}
+};
+const CARTAS={
+toque:{icon:"🐾",label:"CARTA PARA GARY — FINAL A",texto:`No te fuiste porque dejaste de querernos.
+
+Te fuiste porque tu patita ya habia tocado todo lo que tenia que tocar aqui.
+
+Nos enseñaste que no hace falta hablar para decir "estoy aqui".
+
+Dejas tu huellita, no en el suelo, sino en mi mano.
+
+Para que cada vez que cierre los ojos, sienta tu peso suavecito otra vez.
+
+Mi mano queda abierta.
+
+Siempre.
+
+Te amamos, Gary.
+De Gabi, tu mama que guarda tu toque.`,firma:"🐾 Gary — siempre en tu mano"},
+ventana:{icon:"🌙",label:"CARTA PARA GARY — FINAL B",texto:`No te fuiste porque dejaste de querernos.
+
+Te fuiste porque ya habias mirado todo lo que tenias que mirar desde aqui.
+
+Nos enseñaste que una casa no necesita paredes si tiene una ventana donde un gato mira la luna.
+
+Nos enseñaste que irse no es desaparecer, es cambiar de ventana.
+
+Dejas la ventana entreabierta, no porque te olvidaste cerrarla,
+
+sino para que la luna entre cada noche y me recuerde donde estas.
+
+La ventana queda abierta.
+
+Siempre.
+
+Te amamos, Gary.
+De Gabi, tu mama que te mira en la luna.`,firma:"🌙 Gary — siempre en la ventana"},
+huellitas:{icon:"✨",label:"CARTA PARA GARY — FINAL C",texto:`No te fuiste porque dejaste de querernos.
+
+Te fuiste porque ya habias cumplido tu mision aqui.
+
+Nos enseñaste que una casa no se mide en metros,
+
+sino en ronroneos.
+
+Nos enseñaste que un bebe puede tener 4 patas, nariz rosita y ojos grandes.
+
+Dejas tu cascabel, no porque ya no lo necesites,
+
+sino para que cada vez que lo escuchemos en el viento,
+
+sepamos que estas cerca.
+
+La ventana queda abierta.
+
+Siempre.
+
+Te amamos, Gary.
+De Gabi, tu mama.`,firma:"✨ Gary — siempre en casa"}
+};
+const FOTOS=[
+{file:"gary01.jpg",hora:"12:00 AM",titulo:"Se abre el camino",texto:"Gary despierta.\nSu colita naranja clarita empieza a brillar."},
+{file:"gary02.jpg",hora:"12:30 AM",titulo:"Casa Vacia",texto:"Su platito vacio en el suelo de talavera.\nSu lugar sigue ahi."},
+{file:"gary03.jpg",hora:"1:00 AM",titulo:"El Bebe",texto:"Chiquitito, ojos ambar enormes.\nNariz rosita, maullido bajito."},
+{file:"gary04.jpg",hora:"1:45 AM",titulo:"El Travieso",texto:"Bostezo grande, colmillitos afilados.\nImposible no quererlo."},
+{file:"gary05.jpg",hora:"3:15 AM",titulo:"Los Tejados",texto:"Solo un tejado brilla naranja clarito.\nGary."},
+{file:"gary06.jpg",hora:"3:45 AM",titulo:"El Juego",texto:"Su cinta naranja favorita.\nFeliz con tan poco."},
+{file:"gary07.jpg",hora:"4:30 AM",titulo:"Lugar Seguro",texto:"Acurrucado en la chompa marron.\nDonde era feliz."},
+{file:"gary08.jpg",hora:"5:00 AM",titulo:"Te Quiero",texto:"El parpadeo lento.\nEn idioma gato, eso es un te quiero.\nI love you ~ (cat language: slow blink ❤️)"},
+{file:"gary09.jpg",hora:"11:30 PM",titulo:"Ultimo Abrazo",texto:"11:30 PM. Casi acaba el dia.\nUltimo abrazo, fuerte.\n\n→ Elige el final"}
+];
+let actual=0,musicaKey="",startX=0,finalActual="toque";
+const visor=document.getElementById('visor');
+const musica=document.getElementById('musica');
+function cambiarMusica(t){if(musicaKey===t)return;musicaKey=t;musica.src=MUSICAS[t].src;musica.volume=0.42;musica.play().catch(()=>{});}
+function crearSlides(){FOTOS.forEach((f,i)=>{const s=document.createElement('div');s.className='slide'+(i===0?' activo':'');s.innerHTML=`<img src="${f.file}"><div class="info"><div class="hora">${f.hora}</div><div class="titulo">${f.titulo}</div><div class="texto">${f.texto}</div></div><div class="barra" style="width:${((i+1)/FOTOS.length)*100}%"></div>`;visor.appendChild(s);const d=document.createElement('div');d.className='dot'+(i===0?' activo':'');d.onclick=()=>irA(i);document.getElementById('progreso').appendChild(d);});}
+function irA(n,dir=null){if(n<0)n=0;if(n>=FOTOS.length)n=FOTOS.length-1;if(n===actual)return;if(n===9||actual===8&&n>8){mostrarSelector();return;}const d=dir!==null?dir:(n>actual?1:-1);const slides=document.querySelectorAll('#visor .slide');const a=slides[actual],b=slides[n];b.classList.remove('salida-izq','salida-der','activo');b.style.transform=d===1?'translateX(110%)':'translateX(-110%)';b.offsetHeight;if(a){a.classList.remove('activo');a.classList.add(d===1?'salida-izq':'salida-der');}requestAnimationFrame(()=>{b.classList.add('activo');b.style.transform='';});actual=n;document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('activo',i===actual));document.getElementById('visorFinal').classList.remove('visible');document.getElementById('cartaFinal').classList.remove('visible');document.getElementById('selectorFinales').classList.remove('visible');}
+function mostrarSelector(){document.getElementById('selectorFinales').classList.add('visible');document.getElementById('visorFinal').classList.remove('visible');document.getElementById('cartaFinal').classList.remove('visible');}
+function volverAlViaje(){document.getElementById('cartaFinal').classList.remove('visible');document.getElementById('visorFinal').classList.remove('visible');document.getElementById('selectorFinales').classList.remove('visible');irA(8,-1);}
+function mostrarCarta(){const c=CARTAS[finalActual];document.getElementById('cartaTexto').textContent=c.texto;document.getElementById('cartaFirma').textContent=c.firma;document.getElementById('cartaLabel').textContent=c.label;document.getElementById('cartaIcon').textContent=c.icon;const papel=document.getElementById('papel');papel.className='carta-papel '+finalActual;const fondo=document.getElementById('cartaFinal');fondo.className='fondo-'+finalActual;fondo.classList.add('visible');fondo.style.display='flex';}
+function mostrarFinal(k){finalActual=k;const f=FINALES[k];document.getElementById('imgFinal').src=f.file;document.getElementById('horaFinal').textContent=f.hora;document.getElementById('tituloFinal').textContent=f.titulo;document.getElementById('textoFinal').textContent=f.texto;document.getElementById('btnCarta').textContent='💌 Leer carta '+k.charAt(0).toUpperCase()+k.slice(1);document.getElementById('visorFinal').classList.add('visible');document.getElementById('selectorFinales').classList.remove('visible');document.getElementById('cartaFinal').classList.remove('visible');cambiarMusica(f.musica);const barra=document.getElementById('barraFinal');barra.style.transition='none';barra.style.width='0%';setTimeout(()=>{barra.style.transition='width 22s linear';barra.style.width='100%';},80);}
+document.getElementById('prev').onclick=()=>irA(actual-1,-1);
+document.getElementById('next').onclick=()=>{if(actual===8)mostrarSelector();else irA(actual+1,1);};
+document.querySelectorAll('.card-final').forEach(c=>c.onclick=()=>mostrarFinal(c.dataset.final));
+document.getElementById('volver9').onclick=()=>irA(8,-1);
+document.getElementById('btnEntrar').onclick=()=>{document.getElementById('inicio').classList.add('oculta');cambiarMusica('viaje');};
+visor.addEventListener('touchstart',e=>{startX=e.touches[0].clientX},{passive:true});
+visor.addEventListener('touchend',e=>{const diff=e.changedTouches[0].clientX-startX;if(Math.abs(diff)>60){if(diff<0){if(actual===8)mostrarSelector();else irA(actual+1,1);}else irA(actual-1,-1);}}, {passive:true});
+window.mostrarSelector=mostrarSelector;window.volverAlViaje=volverAlViaje;window.mostrarCarta=mostrarCarta;
+crearSlides();
+</script>
+</body>
+</html>
