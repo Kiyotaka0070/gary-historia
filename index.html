@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gary - El Viaje de Luz (Ofrenda 27 de Octubre)</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050302;color:#f7f3ec;font-family:"Plus Jakarta Sans",sans-serif;overflow:hidden;user-select:none}
+#visor{width:100vw;height:100vh;position:relative;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050302;transform:translateX(110%);opacity:0;transition:transform 0.75s cubic-bezier(0.77,0,0.175,1), opacity 0.5s ease;z-index:1}
+.slide.activo{transform:translateX(0);opacity:1;z-index:3}
+.slide.salida-izq{transform:translateX(-110%);opacity:0;z-index:2}
+.slide.salida-der{transform:translateX(110%);opacity:0;z-index:2}
+.slide img{width:100%;max-width:100vw;max-height:48vh;object-fit:contain;background:#000}
+
+/* Caja de texto con marco sutil de luz y estilo ofrenda */
+.info{width:100%;max-width:720px;padding:22px 30px;text-align:center;background:linear-gradient(180deg,rgba(18,10,6,0.95),rgba(32,18,10,0.99));backdrop-filter:blur(14px);border:1px solid rgba(242,165,65,0.35);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,0.7), 0 0 25px rgba(242,165,65,0.15);transform:translateY(24px);opacity:0;transition:transform 0.6s 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.6s 0.25s;margin-top:12px}
+.slide.activo .info{transform:translateY(0);opacity:1}
+
+.hora{font-size:11.5px;letter-spacing:3.5px;color:#f2a541;font-weight:600;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px}
+.titulo{font:600 1.8rem Cormorant Garamond,serif;margin:4px 0 8px;letter-spacing:0.5px;color:#fff4e6;text-shadow:0 2px 8px rgba(242,165,65,0.2)}
+.texto{font:400 1.1rem/1.85 Cormorant Garamond,serif;white-space:pre-line;min-height:70px;color:rgba(252,245,235,0.92)}
+
+.barra{position:absolute;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#f2a541,#d95325,#e6c662);box-shadow:0 0 12px rgba(242,165,65,0.4)}
+
+#selectorFinales{position:fixed;inset:0;z-index:50;display:none;background:radial-gradient(circle at 50% 25%, #26160c 0%, #120a06 65%, #050302 100%);padding:24px;overflow-y:auto;align-items:center;justify-content:center;flex-direction:column;opacity:0;transition:opacity 0.4s ease}
+#selectorFinales.visible{display:flex;opacity:1}
+.finales-grid{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;max-width:820px;margin-top:12px}
+.card-final{width:220px;padding:24px 18px;border-radius:22px;border:1px solid rgba(242,165,65,0.35);background:linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01));backdrop-filter:blur(16px);cursor:pointer;text-align:center;transition:transform 0.35s cubic-bezier(0.16,1,0.3,1), border-color 0.3s ease, box-shadow 0.3s ease}
+.card-final:hover{transform:translateY(-8px);border-color:rgba(242,165,65,0.9);box-shadow:0 15px 35px rgba(217,83,37,0.3)}
+
+#visorFinal{position:fixed;inset:0;z-index:60;display:none;background:#000;flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;padding:20px;opacity:0;transition:opacity 0.4s ease}
+#visorFinal.visible{display:flex;opacity:1}
+
+#cartaFinal{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto;backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);transition:all 0.5s ease}
+#cartaFinal.visible{display:flex;animation:aparecer .45s cubic-bezier(0.16,1,0.3,1) forwards}
+
+#cartaFinal.fondo-toque{background:radial-gradient(120% 120% at 50% 20%, rgba(217,83,37,0.35) 0%, rgba(40,18,10,0.82) 50%, rgba(5,3,2,0.96) 100%)}
+#cartaFinal.fondo-ventana{background:radial-gradient(120% 120% at 50% 20%, rgba(80,120,170,0.32) 0%, rgba(14,24,36,0.85) 50%, rgba(5,3,2,0.96) 100%)}
+#cartaFinal.fondo-huellitas{background:radial-gradient(120% 120% at 50% 20%, rgba(242,165,65,0.38) 0%, rgba(45,30,12,0.82) 50%, rgba(5,3,2,0.96) 100%)}
+
+.carta-papel{width:min(620px,94vw);padding:40px 36px;border-radius:26px;position:relative;box-shadow:0 30px 80px rgba(0,0,0,0.75), 0 0 90px rgba(242,165,65,0.2);border:1px solid rgba(242,165,65,0.45);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);transform:translateY(20px);animation:subirCarta .5s cubic-bezier(0.16,1,0.3,1) forwards}
+@keyframes subirCarta{to{transform:translateY(0)}}
+
+.carta-papel.toque{background:linear-gradient(160deg, rgba(46,24,18,0.97) 0%, rgba(30,14,10,0.95) 100%);color:#fcece6;border-color:rgba(217,83,37,0.45)}
+.carta-papel.ventana{background:linear-gradient(160deg, rgba(18,28,42,0.97) 0%, rgba(10,16,26,0.95) 100%);color:#e2ecf7;border-color:rgba(90,140,200,0.45)}
+.carta-papel.huellitas{background:linear-gradient(160deg, rgba(46,36,18,0.97) 0%, rgba(30,22,10,0.95) 100%);color:#fcf3dc;border-color:rgba(242,165,65,0.5)}
+
+.carta-papel::after{content:"";position:absolute;inset:0;border-radius:26px;background:radial-gradient(80% 60% at 20% 20%, rgba(255,255,255,0.06) 0%, transparent 75%);pointer-events:none}
+.carta-header{font-size:11.5px;letter-spacing:3px;opacity:.85;margin-bottom:18px;display:flex;justify-content:space-between;font-weight:600;color:#f2a541}
+.carta-texto{font:400 1.15rem/2 Cormorant Garamond,serif;white-space:pre-line;text-align:left}
+.carta-firma{margin-top:26px;font:600 1.2rem Cormorant Garamond,serif;text-align:right}
+
+.carta-papel.toque .carta-firma{color:#ff9e7d}
+.carta-papel.ventana .carta-firma{color:#8ab8ff}
+.carta-papel.huellitas .carta-firma{color:#f5c96c}
+
+.controles{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none;z-index:20;padding:0 18px}
+.btn{pointer-events:auto;width:52px;height:52px;border-radius:50%;border:1px solid rgba(242,165,65,0.3);background:rgba(12,8,6,0.7);backdrop-filter:blur(8px);color:#f7f3ec;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.25s ease}
+.btn:hover{background:rgba(242,165,65,0.25);transform:scale(1.08);border-color:rgba(242,165,65,0.8)}
+
+#progreso{position:absolute;bottom:115px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:15}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25);cursor:pointer;transition:all 0.3s ease}
+.dot.activo{background:#f2a541;width:30px;border-radius:10px;box-shadow:0 0 12px rgba(242,165,65,0.7)}
+
+/* Pantalla de Inicio */
+#inicio{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px;transition:opacity 0.9s ease;overflow:hidden;background:#050302}
+#inicio.oculta{opacity:0;pointer-events:none}
+.foto-fondo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(24px) brightness(0.35);transform:scale(1.1)}
+.foto-fondo-overlay{position:absolute;inset:0;background:radial-gradient(85% 70% at 50% 28%, rgba(242,165,65,0.14) 0%, rgba(40,18,10,0.65) 50%, rgba(5,3,2,0.98) 90%)}
+.foto-viva-wrap{width:min(70vw, 320px);aspect-ratio:3/4;border-radius:36px;overflow:hidden;border:2px solid rgba(242,165,65,0.45);box-shadow:0 0 80px rgba(242,165,65,0.3);animation:flotar 4s ease-in-out infinite}
+.foto-viva{width:100%;height:100%;object-fit:cover;animation:fotoRespira 6s ease-in-out infinite}
+
+@keyframes fotoRespira{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes flotar{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+.btn-entrar{margin-top:30px;padding:16px 48px;border-radius:999px;background:linear-gradient(100deg,#f2a541,#d95325 55%,#e6c662);color:#050302;letter-spacing:3px;font-weight:600;border:none;cursor:pointer;box-shadow:0 10px 30px rgba(242,165,65,0.35);transition:transform 0.3s ease, box-shadow 0.3s ease}
+.btn-entrar:hover{transform:scale(1.05);box-shadow:0 15px 40px rgba(242,165,65,0.55)}
+
+/* Animación de pétalos y destellos flotantes */
+@keyframes flotarPetalo {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+  20% { opacity: 0.75; }
+  80% { opacity: 0.75; }
+  100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+}
+
+.petalo-flotante {
+  position: fixed;
+  top: -20px;
+  z-index: 12;
+  user-select: none;
+  pointer-events: none;
+  animation: flotarPetalo linear infinite;
+  filter: drop-shadow(0 0 6px rgba(242,165,65,0.4));
+}
+
+@keyframes aparecer{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}
+</style>
+</head>
+<body>
+<audio id="musica" loop></audio>
+
+<!-- Pantalla de Inicio -->
+<div id="inicio">
+  <img class="foto-fondo" src="portada.jpg">
+  <div class="foto-fondo-overlay"></div>
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center">
+    <div class="foto-viva-wrap"><img class="foto-viva" src="portada.jpg"></div>
+    <h1 style="font:600 2.6rem Cormorant Garamond,serif;margin:16px 0 6px;letter-spacing:1px;color:#fff4e6">El Viaje de Luz de <span style="color:#f2a541">Gary</span></h1>
+    <button class="btn-entrar" id="btnEntrar">ENTRAR ✨</button>
+  </div>
+</div>
+
+<div id="visor"></div>
+<div id="progreso"></div>
+<div class="controles">
+  <button class="btn" id="prev">‹</button>
+  <button class="btn" id="next">›</button>
+</div>
+
+<div id="selectorFinales">
+  <div style="font:600 2.2rem Cormorant Garamond,serif;margin-bottom:6px;text-align:center;color:#fff4e6">🕯️ El altar de luz está listo...</div>
+  <p style="font-size:13px;opacity:0.8;margin-bottom:22px;text-align:center">Día de Muertos de las Mascotas (27 de Octubre) ✨</p>
+  <div class="finales-grid">
+    <div class="card-final" data-final="toque">
+      <div style="font-size:32px;margin-bottom:10px">🕯️🌸</div>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;margin-bottom:4px;color:#fff4e6">FINAL A</h3>
+      <p style="font-weight:600;font-size:13px;color:#ff9e7d;margin-bottom:6px">El Toque</p>
+      <p style="font-size:11px;opacity:0.6">River Flows In You</p>
+    </div>
+    <div class="card-final" data-final="ventana">
+      <div style="font-size:32px;margin-bottom:10px">🌙🕯️</div>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;margin-bottom:4px;color:#fff4e6">FINAL B</h3>
+      <p style="font-weight:600;font-size:13px;color:#8ab8ff;margin-bottom:6px">La Ventana</p>
+      <p style="font-size:11px;opacity:0.6">Comptine</p>
+    </div>
+    <div class="card-final" data-final="huellitas">
+      <div style="font-size:32px;margin-bottom:10px">✨🐾</div>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;margin-bottom:4px;color:#fff4e6">FINAL C</h3>
+      <p style="font-weight:600;font-size:13px;color:#f5c96c;margin-bottom:6px">Huellitas</p>
+      <p style="font-size:11px;opacity:0.6">Cornfield Chase</p>
+    </div>
+  </div>
+  <div style="margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+    <button id="volver8Btn" style="background:rgba(255,255,255,0.06);border:1px solid rgba(242,165,65,0.35);color:#f7f3ec;padding:11px 22px;border-radius:999px;cursor:pointer;font-size:13px;transition:background 0.3s">← Volver a la foto anterior</button>
+  </div>
+</div>
+
+<div id="visorFinal">
+  <img id="imgFinal" style="width:100%;max-width:100vw;max-height:48vh;object-fit:contain;background:#000">
+  <div style="width:100%;max-width:700px;padding:18px 24px;text-align:center;background:linear-gradient(180deg,rgba(12,8,6,0.92),#18100c);border:1px solid rgba(242,165,65,0.35);border-radius:18px;margin-top:12px">
+    <div id="horaFinal" class="hora"></div>
+    <div id="tituloFinal" class="titulo"></div>
+    <div id="textoFinal" class="texto"></div>
+    <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button id="btnCarta" style="padding:11px 22px;border-radius:999px;background:linear-gradient(100deg,#f2a541,#d95325);color:#050302;border:none;cursor:pointer;font-weight:600;box-shadow:0 4px 18px rgba(242,165,65,0.3)">🕯️ Leer ofrenda de Gabi</button>
+      <button style="padding:11px 22px;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid rgba(242,165,65,0.35);color:#f7f3ec;cursor:pointer" onclick="mostrarSelector()">Ver otros altares ↺</button>
+    </div>
+  </div>
+  <div id="barraFinal" class="barra" style="width:0%"></div>
+</div>
+
+<div id="cartaFinal">
+  <div id="papel" class="carta-papel toque">
+    <div class="carta-header">
+      <span id="cartaLabel">OFRENDA PARA GARY — DE GABI</span>
+      <span id="cartaIcon">🕯️</span>
+    </div>
+    <div id="cartaTexto" class="carta-texto"></div>
+    <div id="cartaFirma" class="carta-firma"></div>
+    <div style="margin-top:30px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button style="padding:11px 24px;border-radius:999px;border:none;background:linear-gradient(100deg,#f2a541,#d95325);color:#050302;cursor:pointer;font-weight:600;box-shadow:0 4px 18px rgba(242,165,65,0.25)" onclick="volverAlViaje()">← Volver al altar</button>
+      <button style="padding:11px 24px;border-radius:999px;border:1px solid rgba(242,165,65,0.35);background:rgba(255,255,255,0.06);color:#f7f3ec;cursor:pointer;font-weight:600" onclick="mostrarSelector()">Ver otros altares</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MUSICAS={viaje:{src:"musica/lluvia.mp3"},toque:{src:"musica/toque.mp3"},ventana:{src:"musica/ventana.mp3"},huellitas:{src:"musica/huellitas.mp3"}};
+const FINALES={
+toque:{file:"gary-final-toque.jpg",hora:"🕯️ 27 OCT — OFRENDA DE LUZ 🌸",titulo:"El Toque",texto:"Gary pone su patita blanca en tu mano.\nEn esta noche de luz y cempasúchil, la distancia no existe.\n\n- Gary 🕯️🐾",musica:"toque"},
+ventana:{file:"gary-final-ventana.jpg",hora:"🌙 27 OCT — OFRENDA DE LUZ ✨",titulo:"La Ventana",texto:"Desde la ventana, Gary mira la luz de las velitas.\nSabe que su familia lo recuerda con todo el corazón.\n\n- Gary 🌙",musica:"ventana"},
+huellitas:{file:"gary-final-huellitas.jpg",hora:"✨ 27 OCT — OFRENDA DE LUZ 🐾",titulo:"Huellitas de Cempasúchil",texto:"El camino de pétalos brilla en la oscuridad.\nCada huella tuya y suya sigue unida por siempre.\n\n- Gary ✨🐾",musica:"huellitas"}
+};
+const CARTAS={
+toque:{icon:"🕯️",label:"🕯️ OFRENDA PARA GARY — FINAL A 🌸",texto:`En este 27 de octubre, las velitas y el copal se encienden para guiarte de regreso a casa.
+
+No te fuiste porque dejaste de querernos.
+
+Te fuiste porque tu patita ya habia tocado todo lo que tenia que tocar aqui.
+
+Nos enseñaste que no hace falta hablar para decir "estoy aqui".
+
+Dejas tu huellita, no en el suelo, sino en mi mano.
+
+Para que cada vez que cierre los ojos, sienta tu peso suavecito otra vez.
+
+Mi mano queda abierta.
+
+Siempre.
+
+Te amamos, Gary.
+De Gabi, tu mamá; que guarda tu toque.`,firma:"🕯️ Gary — siempre en tu mano"},
+ventana:{icon:"🌙",label:"🌙 OFRENDA PARA GARY — FINAL B ✨",texto:`En este 27 de octubre, abrimos la ventana y encendemos la luz de las ánimas para esperarte.
+
+No te fuiste porque dejaste de querernos.
+
+Te fuiste porque ya habias mirado todo lo que tenias que mirar desde aqui.
+
+Nos enseñaste que una casa no necesita paredes si tiene una ventana donde un gato mira la luna.
+
+Dejas la ventana entreabierta para que la velita te muestre el camino de regreso cada año.
+
+La ventana queda abierta.
+
+Siempre.
+
+Te amamos, Gary.
+De Gabi, tu mamá; que te mira en la luna.`,firma:"🌙 Gary — siempre en la ventana"},
+huellitas:{icon:"✨",label:"✨ OFRENDA PARA GARY — FINAL C 🐾",texto:`En este 27 de octubre, las flores de cempasúchil marcan tus huellitas doradas en el altar.
+
+No te fuiste porque dejaste de querernos.
+
+Te fuiste porque ya habias cumplido tu mision aqui, llenando de luz nuestros dias.
+
+Nos enseñaste que una casa no se mide en metros, sino en ronroneos.
+
+Dejas tu cascabel sonando suavemente con el viento de la ofrenda.
+
+La ventana queda abierta.
+
+Siempre.
+
+Te amamos, Gary.
+De Gabi, tu mamá;.`,firma:"✨ Gary — siempre en casa"}
+};
+const FOTOS=[
+{file:"gary01.jpg",hora:"🕯️ 27 Oct — 12:00 AM 🌸",titulo:"Se abre el camino",texto:"✨ Gary despierta entre destellos de luz.\nSu colita naranja clarita empieza a brillar suavemente."},
+{file:"gary02.jpg",hora:"🕯️ 27 Oct — 12:30 AM 🕯️",titulo:"Casa Vacia",texto:"🌸 Su platito espera en el suelo de talavera.\nSu lugarcito con amor sigue intacto aqui."},
+{file:"gary03.jpg",hora:"🕯️ 27 Oct — 1:00 AM ✨",titulo:"El Bebe",texto:"🐾 Chiquitito, de ojos ámbar enormes.\nNariz rosita y un maullido bajito que enamora."},
+{file:"gary04.jpg",hora:"🕯️ 27 Oct — 1:45 AM 🌸",titulo:"El Travieso",texto:"✨ Bostezo grande, colmillitos afilados.\nImposible no querer a este angelito."},
+{file:"gary05.jpg",hora:"🕯️ 27 Oct — 3:15 AM 🕯️",titulo:"Los Tejados",texto:"🌙 Bajo la luz de la luna y las estrellas,\nsolo un tejado brilla con luz propia: Gary."},
+{file:"gary06.jpg",hora:"🕯️ 27 Oct — 3:45 AM ✨",titulo:"El Juego",texto:"🌸 Su cinta naranja favorita revoloteando.\nTan feliz y lleno de paz con tan poquito."},
+{file:"gary07.jpg",hora:"🕯️ 27 Oct — 4:30 AM 🕯️",titulo:"Lugar Seguro",texto:"🐾 Acurrucado siempre en la chompa marrón.\nEl refugio donde era inmensamente feliz."},
+{file:"gary08.jpg",hora:"🕯️ 27 Oct — 5:00 AM ✨",titulo:"Te Quiero",texto:"❤️ El parpadeo lento de amor infinito.\nEn idioma gato, un 'te quiero' para toda la eternidad."},
+{file:"gary09.jpg",hora:"🕯️ 27 Oct — 11:30 PM 🌸",titulo:"Último Abrazo",texto:"🕯️ Casi acaba el día de luz y ofrenda.\nUn abrazo fuerte y eterno.\n\n→ Elige tu altar de luz ✨"}
+];
+let actual=0,musicaKey="",startX=0,finalActual="toque";
+const visor=document.getElementById('visor');
+const musica=document.getElementById('musica');
+
+function cambiarMusica(t){
+  if(musicaKey===t)return;
+  musicaKey=t;
+  musica.src=MUSICAS[t].src;
+  musica.volume=0.42;
+  musica.play().catch(()=>{});
+}
+
+function crearSlides(){
+  FOTOS.forEach((f,i)=>{
+    const s=document.createElement('div');
+    s.className='slide'+(i===0?' activo':'');
+    s.innerHTML=`<img src="${f.file}"><div class="info"><div class="hora">${f.hora}</div><div class="titulo">${f.titulo}</div><div class="texto">${f.texto}</div></div><div class="barra" style="width:${((i+1)/FOTOS.length)*100}%"></div>`;
+    visor.appendChild(s);
+    const d=document.createElement('div');
+    d.className='dot'+(i===0?' activo':'');
+    d.onclick=()=>irA(i);
+    document.getElementById('progreso').appendChild(d);
+  });
+}
+
+function irA(n,dir=null){
+  if(n<0)n=0;
+  if(n>=FOTOS.length)n=FOTOS.length-1;
+  if(n===actual)return;
+  if(n===9||actual===8&&n>8){mostrarSelector();return;}
+  const d=dir!==null?dir:(n>actual?1:-1);
+  const slides=document.querySelectorAll('#visor .slide');
+  const a=slides[actual],b=slides[n];
+  b.classList.remove('salida-izq','salida-der','activo');
+  b.style.transform=d===1?'translateX(110%)':'translateX(-110%)';
+  b.offsetHeight;
+  if(a){
+    a.classList.remove('activo');
+    a.classList.add(d===1?'salida-izq':'salida-der');
+  }
+  requestAnimationFrame(()=>{
+    b.classList.add('activo');
+    b.style.transform='';
+  });
+  actual=n;
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('activo',i===actual));
+  document.getElementById('visorFinal').classList.remove('visible');
+  document.getElementById('cartaFinal').classList.remove('visible');
+  document.getElementById('selectorFinales').classList.remove('visible');
+}
+
+function mostrarSelector(){
+  document.getElementById('selectorFinales').classList.add('visible');
+  document.getElementById('visorFinal').classList.remove('visible');
+  document.getElementById('cartaFinal').classList.remove('visible');
+  cambiarMusica('viaje');
+}
+
+function volverAlViaje(){
+  document.getElementById('cartaFinal').classList.remove('visible');
+  document.getElementById('visorFinal').classList.remove('visible');
+  document.getElementById('selectorFinales').classList.remove('visible');
+  irA(8,-1);
+}
+
+function mostrarCarta(){
+  const c=CARTAS[finalActual];
+  document.getElementById('cartaTexto').textContent=c.texto;
+  document.getElementById('cartaFirma').textContent=c.firma;
+  document.getElementById('cartaLabel').textContent=c.label;
+  document.getElementById('cartaIcon').textContent=c.icon;
+  const papel=document.getElementById('papel');
+  papel.className='carta-papel '+finalActual;
+  const fondo=document.getElementById('cartaFinal');
+  fondo.className='fondo-'+finalActual;
+  fondo.classList.add('visible');
+}
+
+function mostrarFinal(k){
+  finalActual=k;
+  const f=FINALES[k];
+  document.getElementById('imgFinal').src=f.file;
+  document.getElementById('horaFinal').textContent=f.hora;
+  document.getElementById('tituloFinal').textContent=f.titulo;
+  document.getElementById('textoFinal').textContent=f.texto;
+  document.getElementById('btnCarta').textContent='🕯️ Leer ofrenda de Gabi';
+  document.getElementById('visorFinal').classList.add('visible');
+  document.getElementById('selectorFinales').classList.remove('visible');
+  document.getElementById('cartaFinal').classList.remove('visible');
+  cambiarMusica(f.musica);
+  const barra=document.getElementById('barraFinal');
+  barra.style.transition='none';
+  barra.style.width='0%';
+  setTimeout(()=>{
+    barra.style.transition='width 22s linear';
+    barra.style.width='100%';
+  },80);
+}
+
+// Generador de pétalos y destellos flotantes
+function crearLluviaDeLuz(){
+  const simbolos=['🕯️','🌸','✨','🐾','🍂'];
+  setInterval(()=>{
+    const el=document.createElement('div');
+    el.className='petalo-flotante';
+    el.textContent=simbolos[Math.floor(Math.random()*simbolos.length)];
+    el.style.left=(Math.random()*95)+'vw';
+    el.style.animationDuration=(Math.random()*4+6)+'s';
+    el.style.fontSize=(Math.random()*8+14)+'px';
+    document.body.appendChild(el);
+    setTimeout(()=>{el.remove();},10000);
+  },850);
+}
+
+// Event Listeners
+document.getElementById('prev').onclick=()=>irA(actual-1,-1);
+document.getElementById('next').onclick=()=>{if(actual===8)mostrarSelector();else irA(actual+1,1);};
+document.querySelectorAll('.card-final').forEach(c=>c.onclick=()=>mostrarFinal(c.dataset.final));
+document.getElementById('volver8Btn').onclick=()=>{
+  document.getElementById('selectorFinales').classList.remove('visible');
+  irA(8,-1);
+};
+document.getElementById('btnEntrar').onclick=()=>{document.getElementById('inicio').classList.add('oculta');cambiarMusica('viaje');};
+document.getElementById('btnCarta').onclick=mostrarCarta;
+
+visor.addEventListener('touchstart',e=>{startX=e.touches[0].clientX},{passive:true});
+visor.addEventListener('touchend',e=>{
+  const diff=e.changedTouches[0].clientX-startX;
+  if(Math.abs(diff)>60){
+    if(diff<0){if(actual===8)mostrarSelector();else irA(actual+1,1);}
+    else irA(actual-1,-1);
+  }
+},{passive:true});
+
+window.mostrarSelector=mostrarSelector;
+window.volverAlViaje=volverAlViaje;
+window.mostrarCarta=mostrarCarta;
+
+crearSlides();
+crearLluviaDeLuz();
+</script>
+</body>
+</html>
